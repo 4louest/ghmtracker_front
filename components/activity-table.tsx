@@ -1,55 +1,70 @@
 'use client'
 
-import {Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import {z} from "zod";
 import * as React from "react";
-import {Tabs} from "@/components/ui/tabs";
+import {ColumnDef, flexRender, getCoreRowModel, useReactTable} from "@tanstack/react-table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 
-export const schema = z.object({
-    name: z.string(),
-    socialContext: z.string(),
-    // location: z.string(),
-    dateFrom: z.date(),
-    level: z.string(),
-    type: z.object({
-        id: z.number(),
-        name: z.string(),
-        color: z.string(),
-    }),
-})
 
-export function ActivityTable({ data: initialData}: {
-    data: z.infer<typeof schema>[]
-}){
-    const [data, setData] = React.useState(() => initialData)
+
+interface DataTableProps<TData, TValue> {
+    columns: ColumnDef<TData, TValue>[]
+    data: TData[]
+}
+
+export function ActivityTable<TData, TValue>({
+                                             columns,
+                                             data,
+                                         }: DataTableProps<TData, TValue>) {
+    const table = useReactTable({
+        data,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+    })
+
     return (
-        <Tabs
-            defaultValue="outline"
-            className="w-full flex-col justify-start gap-6"
-        >
+        <div className="rounded-md border">
             <Table>
-                <TableCaption>Activités récentes</TableCaption>
                 <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[100px]">Titre</TableHead>
-                        <TableHead>Contexte</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Niveau de difficulté</TableHead>
-                        <TableHead>Nature</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.map((activity, k) => (
-                        <TableRow key={k}>
-                            <TableCell className="font-medium">{activity.name}</TableCell>
-                            <TableCell>{activity.socialContext}</TableCell>
-                            <TableCell>{new Date(activity.dateFrom).toLocaleDateString()}</TableCell>
-                            <TableCell className="text-right">{activity.level}</TableCell>
-                            <TableCell>{activity.type.name}</TableCell>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => {
+                                return (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(
+                                                header.column.columnDef.header,
+                                                header.getContext()
+                                            )}
+                                    </TableHead>
+                                )
+                            })}
                         </TableRow>
                     ))}
+                </TableHeader>
+                <TableBody>
+                    {table.getRowModel().rows?.length ? (
+                        table.getRowModel().rows.map((row) => (
+                            <TableRow
+                                key={row.id}
+                                data-state={row.getIsSelected() && "selected"}
+                            >
+                                {row.getVisibleCells().map((cell) => (
+                                    <TableCell key={cell.id}>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={columns.length} className="h-24 text-center">
+                                No results.
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
             </Table>
-        </Tabs>
+        </div>
     )
 }

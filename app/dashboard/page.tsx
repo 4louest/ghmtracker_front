@@ -7,10 +7,18 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import {ActivityTable} from "@/components/activity-table";
+import {columns, schema} from "@/components/activity-column";
+
+async function getData(): Promise<typeof schema[]> {
+  const data = await fetch('http://localhost:8080/activities')
+  return data.json()
+}
 
 export default async function Page() {
-  const data = await fetch('http://localhost:8080/activities')
-  const activities:[] = await data.json()
+  const activities = await getData()
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
+  activities.sort((a, b) => new Date(b.dateFrom) - new Date(a.dateFrom));
   return (
     <SidebarProvider
       style={
@@ -30,7 +38,7 @@ export default async function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <ActivityTable data={activities} />
+              <ActivityTable columns={columns} data={activities} />
             </div>
           </div>
         </div>
